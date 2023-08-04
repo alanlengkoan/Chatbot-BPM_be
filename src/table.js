@@ -1,14 +1,8 @@
 import { db } from "./firebase.js";
 import {
   collection,
-  addDoc,
-  updateDoc,
-  doc,
-  serverTimestamp,
   query,
-  where,
-  getDocs,
-  or
+  getDocs
 } from "firebase/firestore";
 
 // untuk ambil data users

@@ -1,11 +1,7 @@
 import express, { text } from "express";
 import session from "express-session";
 import dotEnv from "dotenv";
-import passport from "passport";
 import cors from "cors";
-import {
-  Strategy as GoogleStrategy
-} from "passport-google-oauth2";
 import {
   collection,
   addDoc,
@@ -35,7 +31,7 @@ process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
 initializeApp({
     credential: applicationDefault(),
-    projectId: 'chatbot-dialogflow-api',
+    projectId: process.env.FIREBASE_PROJECT_ID,
 });
 
 const app = express();
@@ -48,7 +44,7 @@ if (process.env.APP_STAGE === 'dev') {
   }));
 } else {
   app.use(cors({
-    origin: 'https://mysone.netlify.app',
+    origin: 'https://canb.netlify.app',
     optionsSuccessStatus: 200
   }));
 }
@@ -67,45 +63,6 @@ app.use(express.json());
 app.use(express.urlencoded({
   extended: false
 }));
-
-// untuk passport
-app.use(passport.initialize());
-app.use(passport.session());
-
-passport.serializeUser(function (user, cb) {
-  cb(null, user);
-});
-
-passport.deserializeUser(function (obj, cb) {
-  cb(null, obj);
-});
-
-// initialize google auth
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL;
-const SCOPE = [
-  'https://www.googleapis.com/auth/cloud-platform',
-  'https://www.googleapis.com/auth/dialogflow',
-  'profile',
-  'email'
-];
-
-var userProfile;
-
-passport.use(new GoogleStrategy({
-    clientID: GOOGLE_CLIENT_ID,
-    clientSecret: GOOGLE_CLIENT_SECRET,
-    callbackURL: GOOGLE_CALLBACK_URL,
-    passReqToCallback: true
-  },
-  function (request, accessToken, refreshToken, profile, done) {
-    userProfile = profile;
-    userProfile.accessToken = accessToken;
-    userProfile.refreshToken = refreshToken;
-    return done(null, userProfile);
-  }
-));
 
 // untuk host
 const port = process.env.PORT;
@@ -261,7 +218,7 @@ app.post('/dialogflow/detect', (req, res) => {
 
     const credentials = JSON.parse(process.env.DIALOGFLOW_CREDENTIALS);
     const projectId = credentials.project_id;
-    const sessionId = 'Testing';
+    const sessionId = process.env.DIALOGFLOW_SESSION_ID;
     const languageCode = 'id-ID';
 
     const config = {
@@ -361,26 +318,3 @@ app.post('/dialogflow/webhook', async (req, res) => {
   }
 });
 // end:: dialogflow
-
-// begin:: google auth
-// untuk success
-app.get('/auth/google/success', (req, res) => {
-  res.send("Berhasil login dengan akun google milik " + JSON.stringify(userProfile));
-});
-
-// untuk failure
-app.get('/auth/google/failure', (req, res) => {
-  res.send('Login gagal');
-});
-
-// untuk login
-app.get('/auth/google', passport.authenticate('google', {
-  scope: SCOPE
-}));
-
-// untuk callback
-app.get('/auth/google/callback', passport.authenticate('google', {
-  successRedirect: '/auth/google/success',
-  failureRedirect: '/auth/google/failure'
-}));
-// end:: google auth
