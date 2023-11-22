@@ -39,7 +39,7 @@ const app = express();
 // untuk cors
 if (process.env.APP_STAGE === 'dev') {
   app.use(cors({
-    origin: 'http://localhost:3000',
+    origin: 'http://localhost:5173',
     optionsSuccessStatus: 200
   }));
 } else {
